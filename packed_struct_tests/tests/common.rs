@@ -1,5 +1,6 @@
-
-pub struct Rnd { seed: u64 }
+pub struct Rnd {
+    seed: u64,
+}
 impl Rnd {
     pub fn new(seed: u64) -> Rnd {
         Rnd { seed: seed }
@@ -26,8 +27,6 @@ impl Iterator for Rnd {
         Some(self.next())
     }
 }
-
-
 
 #[test]
 fn test_rnd() {

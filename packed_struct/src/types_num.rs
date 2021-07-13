@@ -323,7 +323,7 @@ macro_rules! integer_bytes_impl {
         impl SizedInteger<$T, $TB> for Integer<$T, $TB> {
             #[inline]
             fn value_bit_mask() -> $T {
-                ones($TB::number_of_bits() as u64) as $T
+                ones($TB::number_of_bits() as u128) as $T
             }
 
             #[inline]
@@ -676,11 +676,11 @@ bytes16_impl!(i128, signed);
 /// ones(2) => 0b11
 /// ones(3) => 0b111
 /// ...
-const fn ones(n: u64) -> u64 {
+const fn ones(n: u128) -> u128 {
     if n == 0 {
         return 0;
     }
-    if n >= 64 {
+    if n >= 128 {
         return !0;
     }
 
@@ -723,6 +723,27 @@ fn test_u64() {
     );
     assert_eq!(
         [0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11],
+        num.to_lsb_bytes().unwrap()
+    );
+}
+
+#[test]
+fn test_u128() {
+    let val = 0x11223344556677881122334455667788;
+    let num: Integer<u128, Bits128> = val.into();
+    assert_eq!(val, *num);
+    assert_eq!(
+        [
+            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
+            0x77, 0x88
+        ],
+        num.to_msb_bytes().unwrap()
+    );
+    assert_eq!(
+        [
+            0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33,
+            0x22, 0x11
+        ],
         num.to_lsb_bytes().unwrap()
     );
 }
