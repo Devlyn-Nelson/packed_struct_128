@@ -123,9 +123,8 @@ where
     fn to_msb_bytes(&self)
         -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>;
     /// Convert to a LSB byte representation. 0xAABB is converted into [0xBB, 0xAA].
-    fn to_lsb_bytes(&self) -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>
-    where
-        B: BitsFullBytes;
+    fn to_lsb_bytes(&self)
+        -> PackingResult<<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes>;
     /// Convert from a MSB byte array.
     fn from_msb_bytes(
         bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes,
@@ -133,9 +132,7 @@ where
     /// Convert from a LSB byte array.
     fn from_lsb_bytes(
         bytes: &<<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes,
-    ) -> PackingResult<Self>
-    where
-        B: BitsFullBytes;
+    ) -> PackingResult<Self>;
 }
 
 /// A helper for converting specific bit width signed integers into the native type.
@@ -856,20 +853,14 @@ where
 /// A wrapper that packages the integer as a LSB packaged byte array. Usually
 /// invoked using code generation.
 pub struct LsbInteger<T, B, I>(I, PhantomData<T>, PhantomData<B>);
-impl<T, B, I> Deref for LsbInteger<T, B, I>
-where
-    B: BitsFullBytes,
-{
+impl<T, B, I> Deref for LsbInteger<T, B, I> {
     type Target = I;
 
     fn deref(&self) -> &I {
         &self.0
     }
 }
-impl<T, B, I> From<I> for LsbInteger<T, B, I>
-where
-    B: BitsFullBytes,
-{
+impl<T, B, I> From<I> for LsbInteger<T, B, I> {
     fn from(i: I) -> Self {
         LsbInteger(i, Default::default(), Default::default())
     }
@@ -897,7 +888,6 @@ impl<T, B, I> PackedStruct for LsbInteger<T, B, I>
 where
     B: NumberOfBits,
     I: SizedInteger<T, B>,
-    B: BitsFullBytes,
 {
     type ByteArray = <<B as NumberOfBits>::Bytes as NumberOfBytes>::AsBytes;
 
