@@ -90,3 +90,8 @@ packable_u8_array!(61);
 packable_u8_array!(62);
 packable_u8_array!(63);
 packable_u8_array!(64);
+packable_u8_array!(128);
+packable_u8_array!(256);
+packable_u8_array!(512);
+packable_u8_array!(1024);
+packable_u8_array!(2048);
