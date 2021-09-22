@@ -5,55 +5,53 @@ use packed_struct::prelude::*;
 
 pub mod example1;
 
-
 /// MultiWii status structure
 #[derive(PackedStruct, PartialEq, Debug)]
-#[packed_struct(size_bytes="4", endian="lsb")]
+#[packed_struct(size_bytes = "4", endian = "lsb")]
 pub struct MspStatus {
     /// Cycle time, milliseconds
     pub cycle_time: u16,
     /// Number of I2C bus errors since last reboot
-    pub i2c_errors: u16
+    pub i2c_errors: u16,
 }
 
 #[derive(PackedStruct, PartialEq, Debug)]
-#[packed_struct(size_bytes="1", bit_numbering="lsb0")]
-pub struct SmallIntsLsb {    
-    #[packed_field(bits="2:0")]
+#[packed_struct(size_bytes = "1", bit_numbering = "lsb0")]
+pub struct SmallIntsLsb {
+    #[packed_field(bits = "2:0")]
     pub val1: Integer<u8, packed_bits::Bits3>,
-    #[packed_field(bits="6")]
-    pub val2: bool
+    #[packed_field(bits = "6")]
+    pub val2: bool,
 }
 
-
 #[derive(PackedStruct, Debug, PartialEq)]
-#[packed_struct(bit_numbering="msb0")]
+#[packed_struct(bit_numbering = "msb0")]
 pub struct RoundtripAligned {
-    #[packed_field(bits="0..")]
+    #[packed_field(bits = "0..")]
     f1: u8,
     f2: i8,
-    
-    #[packed_field(endian="msb")]
+
+    #[packed_field(endian = "msb")]
     f3: u16,
-    #[packed_field(endian="msb")]
+    #[packed_field(endian = "msb")]
     f4: i16,
 
-    #[packed_field(endian="lsb")]
+    #[packed_field(endian = "lsb")]
     f5: u16,
-    #[packed_field(endian="lsb")]
+    #[packed_field(endian = "lsb")]
     f6: i16,
 
-    #[packed_field(endian="msb")]
+    #[packed_field(endian = "msb")]
     f7: u32,
-    #[packed_field(endian="msb")]
+    #[packed_field(endian = "msb")]
     f8: i32,
 
-    #[packed_field(endian="lsb")]
+    #[packed_field(endian = "lsb")]
     f9: u32,
-    #[packed_field(endian="lsb")]
+    #[packed_field(endian = "lsb")]
     f10: i32,
 
-    #[packed_field(endian="msb")]
+    #[packed_field(endian = "msb")]
     u64_1: u64,
 
     f11: [u8; 1],
@@ -61,8 +59,5 @@ pub struct RoundtripAligned {
     f13: [u8; 3],
     f14: [u8; 4],
 
-    f15: bool
+    f15: bool,
 }
-
-
-
