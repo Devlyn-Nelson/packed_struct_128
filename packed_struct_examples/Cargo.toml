@@ -5,5 +5,9 @@ authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
 edition = "2018"
 
+[[bin]]
+name = "test"
+path = "src/test.rs"
+
 [dependencies]
 packed_struct = { path = "../packed_struct/", version = "0.6", features = ["byte_types_64"] }

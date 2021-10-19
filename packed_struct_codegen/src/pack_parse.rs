@@ -386,17 +386,88 @@ fn parse_reg_field(
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum BitsPositionParsed {
     Next,
+    // total bit size of struct
+    NextRev(usize),
+    /// starting index of the field
     Start(usize),
+    /// starting index of the field, total bit size of struct
+    StartRev(usize, usize),
+    /// starting index of the field, ending index of the field
     Range(usize, usize),
+    /// starting index of the field, ending index of the field, total bit size of struct
+    RangeRev(usize, usize, usize),
+}
+
+impl Default for BitsPositionParsed {
+    fn default() -> Self {
+        Self::Next
+    }
 }
 
 impl BitsPositionParsed {
-    fn to_bits_position(&self) -> Box<dyn BitsRange> {
+    /*fn to_bits_position(&self) -> Box<dyn BitsRange> {
         match *self {
             BitsPositionParsed::Next => Box::new(NextBits),
+            BitsPositionParsed::NextRev => Box::new(NextRevBits),
             BitsPositionParsed::Start(s) => Box::new(s),
             BitsPositionParsed::Range(a, b) => Box::new(a..b),
         }
+    }*/
+
+    pub fn get_bits_range(
+        &self,
+        packed_bit_width: usize,
+        prev_range: &Option<Range<usize>>,
+    ) -> Range<usize> {
+        match self {
+            Self::Next => {
+                if let &Some(ref prev_range) = prev_range {
+                    (prev_range.end + 1)..((prev_range.end) + (packed_bit_width as usize))
+                } else {
+                    0..((packed_bit_width as usize) - 1)
+                }
+            }
+            Self::NextRev(struct_size_bits) => {
+                if let &Some(ref prev_range) = prev_range {
+                    let prev_start = (struct_size_bits) - 1 - prev_range.end;
+                    ((prev_start) - (packed_bit_width as usize))..(prev_start - 1)
+                } else {
+                    ((struct_size_bits) - (packed_bit_width as usize))..*struct_size_bits - 1
+                }
+            }
+            Self::Start(start) => *start..(start + packed_bit_width as usize - 1),
+            Self::StartRev(start, struct_size_bits) => {
+                let mut end = start + packed_bit_width as usize - 1;
+                end = (struct_size_bits) - 1 - end;
+                let start = (struct_size_bits) - 1 - start;
+                end..start
+            }
+            Self::Range(start, end) => *start..*end,
+            Self::RangeRev(start, end, struct_size_bits) => {
+                let start = (struct_size_bits) - 1 - start;
+                let end = (struct_size_bits) - 1 - end;
+                end..start
+            }
+        }
+    }
+
+    pub fn is_rev(&self) -> Option<usize> {
+        match self {
+            Self::NextRev(a) | Self::StartRev(_, a) | Self::RangeRev(_, _, a) => Some(*a),
+            _ => None,
+        }
+    }
+
+    pub fn rev(&mut self, struct_size_bytes: usize) {
+        let val = match std::mem::take(self) {
+            Self::Next => Self::NextRev(struct_size_bytes * 8),
+            Self::NextRev(_) => Self::Next,
+            Self::Start(start) => Self::StartRev(start, struct_size_bytes * 8),
+            Self::StartRev(start, _) => Self::Start(start),
+            Self::Range(start, end) => Self::RangeRev(start, end, struct_size_bytes * 8),
+            Self::RangeRev(start, end, _) => Self::Range(start, end),
+        };
+        std::mem::replace(self, val);
     }
 
     pub fn range_in_order(a: usize, b: usize) -> Self {
@@ -484,12 +555,21 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
         for field in &fields {
             let mp = get_field_mid_positioning(field)?;
             let bits_position = match (bit_positioning, mp.bits_position) {
-                (Some(BitNumbering::Lsb0), BitsPositionParsed::Next)
-                | (Some(BitNumbering::Lsb0), BitsPositionParsed::Start(_)) => {
+                /*(Some(BitNumbering::Lsb0), BitsPositionParsed::Start(_)) => {
                     return Err(syn::Error::new(
                         field.span(),
                         "LSB0 field positioning currently requires explicit, full field positions.",
                     ));
+                }
+                (Some(BitNumbering::Lsb0), BitsPositionParsed::Next) => {
+                    if let Some(struct_size_bytes) = struct_size_bytes {
+                        BitsPositionParsed::Previous
+                    } else {
+                        return Err(syn::Error::new(
+                            field.span(),
+                            "LSB0 field positioning currently requires explicit struct byte size.",
+                        ));
+                    }
                 }
                 (Some(BitNumbering::Lsb0), BitsPositionParsed::Range(start, end)) => {
                     if let Some(struct_size_bytes) = struct_size_bytes {
@@ -503,22 +583,36 @@ pub fn parse_struct(ast: &syn::DeriveInput) -> syn::Result<PackStruct> {
                             "LSB0 field positioning currently requires explicit struct byte size.",
                         ));
                     }
-                }
-
+                }*/
                 (None, p @ BitsPositionParsed::Next) => p,
                 (Some(BitNumbering::Msb0), p) => p,
+                (Some(BitNumbering::Lsb0), mut p) => {
+                    if let Some(struct_size_bytes) = struct_size_bytes {
+                        p.rev(struct_size_bytes);
+                        p
+                    } else {
+                        return Err(syn::Error::new(
+                            field.span(),
+                            "LSB0 field positioning currently requires explicit struct byte size.",
+                        ));
+                    }
+                }
 
                 (None, _) => {
                     return Err(syn::Error::new(field.span(), "Please explicitly specify the bit numbering mode on the struct with an attribute: #[packed_struct(bit_numbering=\"msb0\")] or \"lsb0\"."));
                 }
             };
-            let bit_range = bits_position
-                .to_bits_position()
-                .get_bits_range(mp.bit_width, &prev_bit_range);
+            let bit_range = bits_position.get_bits_range(mp.bit_width, &prev_bit_range);
 
             fields_parsed.push(parse_field(field, &mp, &bit_range, default_int_endianness)?);
 
-            prev_bit_range = Some(bit_range);
+            if let Some(byte_width) = bits_position.is_rev() {
+                let mut temp = bits_position.clone();
+                temp.rev(byte_width);
+                prev_bit_range = Some(temp.get_bits_range(mp.bit_width, &prev_bit_range));
+            } else {
+                prev_bit_range = Some(bit_range);
+            }
         }
     }
 
