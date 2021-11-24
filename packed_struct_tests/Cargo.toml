@@ -3,7 +3,7 @@ name = "packed_struct_tests"
 version = "0.1.0"
 authors = ["Rudi Benkovic <rudi.benkovic@gmail.com>"]
 publish = false
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 packed_struct = { path = "../packed_struct/", version = "0.6", features = ["byte_types_64", "use_serde"] }

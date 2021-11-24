@@ -31,12 +31,15 @@ impl Display for FieldKind {
                 size,
                 elements,
             } => {
+                write!(fmt, "Ident: [{}]\nSize: [{}]\n", ident, size)?;
                 for e in elements {
                     write!(fmt, "field: [{}]\n", e)?;
                 }
                 Ok(())
             }
-            Self::Regular { ident, field } => write!(fmt, "field: [{}]\n", field),
+            Self::Regular { ident, field } => {
+                write!(fmt, "Ident: [{}]\nfield: [{}]\n", ident, field)
+            }
         }
     }
 }

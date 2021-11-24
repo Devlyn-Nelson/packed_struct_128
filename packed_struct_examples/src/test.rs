@@ -35,14 +35,14 @@ fn main() {
         num2: 0b00000000.into(),
     };
     if let Ok(ref bytes) = b.pack() {
-        for (index, byte) in (0..bytes.len()).zip(bytes) {
+        for byte in bytes {
             println!("{:08b}", byte);
         }
     }
     println!("{:?}", b);
 
     if let Ok(ref bytes) = a.pack() {
-        for (index, byte) in (0..bytes.len()).zip(bytes) {
+        for byte in bytes {
             println!("{:08b}", byte);
         }
     }

@@ -4,7 +4,6 @@ extern crate syn;
 use crate::pack::*;
 use crate::pack_parse_attributes::*;
 
-use crate::utils::*;
 use syn::spanned::Spanned;
 
 use std::ops::Range;
@@ -459,7 +458,7 @@ impl BitsPositionParsed {
     }
 
     pub fn rev(&mut self, struct_size_bytes: usize) {
-        let val = match std::mem::take(self) {
+        let mut val = match std::mem::take(self) {
             Self::Next => Self::NextRev(struct_size_bytes * 8),
             Self::NextRev(_) => Self::Next,
             Self::Start(start) => Self::StartRev(start, struct_size_bytes * 8),
@@ -467,7 +466,7 @@ impl BitsPositionParsed {
             Self::Range(start, end) => Self::RangeRev(start, end, struct_size_bytes * 8),
             Self::RangeRev(start, end, _) => Self::Range(start, end),
         };
-        std::mem::replace(self, val);
+        std::mem::swap(self, &mut val);
     }
 
     pub fn range_in_order(a: usize, b: usize) -> Self {
